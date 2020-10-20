@@ -1,0 +1,56 @@
+---
+apiVersion: apps/v1 # for versions before 1.9.0 use apps/v1beta2
+kind: Deployment
+metadata:
+  name: kpl--mqtt-server
+  namespace: kpl
+spec:
+  selector:
+    matchLabels:
+      app: mqtt
+  replicas: 1 # tells deployment to run 2 pods matching the template
+  template:
+    metadata:
+      labels:
+        app: mqtt
+    spec:
+      containers:
+      - name: mqtt
+        image: eclipse-mosquitto
+        imagePullPolicy: Always
+        volumeMounts:
+        - name: config
+          mountPath: /mosquitto/config/mosquitto.conf
+          subPath: mosquitto.conf
+        ports:
+        - name: port-1883
+          containerPort: 1883
+        resources:
+          requests:
+            cpu: "500m"
+            memory: "512Mi"
+          limits:
+            cpu: "500m"
+            memory: "1024Mi"
+      volumes:
+      - name: config
+        configMap:
+          name: cfg-mqtt
+          
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: mqtt
+  name: kpl--mqtt
+  namespace: kpl
+spec:
+  type: NodePort
+  selector:
+    app: mqtt
+  ports:
+    - port: 1883
+      name: port-1883
+      targetPort: 1883
+      nodePort: 31883
